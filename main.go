@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -36,10 +37,10 @@ func startHTTPServer(port string, background bool) {
 	m := &handler{Port: port}
 	if background {
 		go func() {
-			http.ListenAndServe(fmt.Sprintf(":%s", port), m)
+			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), m))
 		}()
 	} else {
-		http.ListenAndServe(fmt.Sprintf(":%s", port), m)
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), m))
 	}
 }
 func main() {
