@@ -3,17 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
+func GetExternalIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	ipAddr := conn.LocalAddr().String()
+	return strings.Split(ipAddr, ":")[0]
+}
+
+func GetHostNameIP() (string, string) {
+	name, err := os.Hostname()
+	if err != nil {
+		log.Fatal(err)
+	}
+	addrs, err := net.LookupHost(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return name, strings.Join(addrs, ",")
+}
 type handler struct {
 	Port string
 }
 
+var MyName, MyIP = GetHostNameIP()
+var MyExtIP = GetExternalIP()
+
 func (m *handler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	msg := fmt.Sprintf("Hello: Port %s Host: %s RemoteAddr %s", m.Port, req.Host, req.RemoteAddr)
+	msg := fmt.Sprintf("Hello: MyName: %s MyIP: %s ExtIP: %s Port %s Host: %s RemoteAddr %s", 
+		MyName, MyIP, MyExtIP, m.Port, req.Host, req.RemoteAddr)
 	fmt.Println(msg)
 	fmt.Fprintln(resp, msg)
 }
@@ -49,6 +76,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage: portsrv port1 port2 ...\n")
 		os.Exit(1)
 	}
+	log.Printf("MyName: %s MyIP: %s MyExtIP: %s Ports %v\n", MyName, MyIP, MyExtIP, os.Args[1:])
+
 	for i, port := range os.Args[1:] {
 		if !isValidPort(port) {
 			os.Exit(1)
